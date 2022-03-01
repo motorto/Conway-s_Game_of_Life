@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 void clearBoard(int *currentGen,int rows,int cols)
 {
@@ -30,34 +31,32 @@ void printBoard(int *currentGen,int rows,int cols)
 	puts("\n");
 }
 
-//TODO: 
-// Missing edge cases
-int countLiveNeighbours (int *currentPosition, int rows, int cols)
+int countLiveNeighbours (int *currentPosition,int offset, int rows, int cols)
 {
 	int liveNeighbours = 0;
 
-	if ( *(currentPosition - 1) == 1) {
+	if ( (offset % cols != 0) && (*(currentPosition - 1) == 1)) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition + 1) == 1) {
+	if ( (offset % cols != (cols - 1)) && *(currentPosition + 1) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition - cols) == 1) {
+	if (offset > cols && *(currentPosition - cols) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition - cols - 1) == 1) {
+	if (( (offset > cols) || (offset % cols != 0) ) && *(currentPosition - cols - 1) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition - cols + 1) == 1) {
+	if ( ((offset > cols) || (offset % cols != (cols - 1)) ) && *(currentPosition - cols + 1) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition + cols) == 1) {
+	if ( (offset < (rows*(cols-1))) && *(currentPosition + cols) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition + cols - 1) == 1) {
+	if ( ((offset < (rows*(cols-1))) || (offset % cols != 0)) &&  *(currentPosition + cols - 1) == 1) {
 		liveNeighbours++;
 	}
-	if ( *(currentPosition + cols + 1) == 1) {
+	if ( ((offset < (rows*(cols-1))) || (offset % cols != (cols - 1)) ) &&  *(currentPosition + cols + 1) == 1) {
 		liveNeighbours++;
 	}
 
@@ -68,20 +67,33 @@ void nextGeneration(int *prevGen, int *nextGen, int rows,int cols)
 {
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++) {
-			if( *((prevGen + i * cols) + j) == 1 ) {
-				int liveNeighbours = countLiveNeighbours((prevGen + i * cols) + j,rows,cols);
+			int offset = (i * cols) + j;
+			if( *(prevGen + offset) == 1 ) {
+				int liveNeighbours = countLiveNeighbours(prevGen + offset,offset,rows,cols);
 				if( liveNeighbours == 2 || liveNeighbours == 3) {
-					*((nextGen + i * cols) + j) = 1;
+					*(nextGen + offset) = 1;
 				}
 			}
-			else if( *((prevGen + i * cols) + j) == 0 ) {
-				int liveNeighbours = countLiveNeighbours((prevGen + i * cols) + j,rows,cols);
+		else if( *(prevGen + offset) == 0 ) {
+				int liveNeighbours = countLiveNeighbours(prevGen + offset,offset,rows,cols);
 				if( liveNeighbours == 3) {
-					*((nextGen + i * cols) + j) = 1;
+					*(nextGen + offset) = 1;
 				}
 			}
 		}
 	}
+}
+
+int sameGeneration (int *prevGen, int *nextGen, int rows,int cols)
+{
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			if ( *((prevGen + i * cols) + j) != *((nextGen+ i * cols) + j) ) {
+				return 0;
+			}
+		}
+	}
+	return 1;
 }
 
 int main (int argc, char *argv[])
@@ -95,12 +107,18 @@ int main (int argc, char *argv[])
 
 	readBoard(prevGen,rows,cols);
 
-	int k = 0;
-	while (k<2) {
+	puts("---------------------");
+	printBoard(prevGen,rows,cols);
+	puts("---------------------");
+
+	int gen = 1;
+	do {
+
 		clearBoard(nextGen,rows,cols);
 		nextGeneration(prevGen,nextGen,rows,cols);
+
 		puts("---------------------");
-		printBoard(prevGen,rows,cols);
+		printf("Generation: %d\n",gen);
 		printBoard(nextGen,rows,cols);
 		puts("---------------------");
 
@@ -108,8 +126,11 @@ int main (int argc, char *argv[])
 		prevGen = nextGen;
 		nextGen = tmp;
 
-		k++;
-	}
+		gen++;
+		sleep(1);
+
+	} while(!sameGeneration(prevGen,nextGen,rows,cols));
+
 
 	free(prevGen);
 	free(nextGen);
