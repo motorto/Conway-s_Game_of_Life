@@ -11,11 +11,11 @@ void clearBoard(int *currentGen,int rows,int cols)
 	}
 }
 
-void readBoard (int *currentGen,int rows,int cols)
+void createSeed (int *currentGen,int rows,int cols)
 {
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++) {
-			scanf("%d",((currentGen + i * cols) + j));
+			*((currentGen + i * cols) + j) = rand() % 2; 
 		}
 	}
 }
@@ -105,7 +105,7 @@ int main (int argc, char *argv[])
 	int *prevGen = malloc(rows * cols * sizeof(int));
 	int *nextGen = malloc(rows * cols * sizeof(int));
 
-	readBoard(prevGen,rows,cols);
+	createSeed(prevGen,rows,cols);
 
 	puts("---------------------");
 	printBoard(prevGen,rows,cols);
@@ -117,6 +117,7 @@ int main (int argc, char *argv[])
 		clearBoard(nextGen,rows,cols);
 		nextGeneration(prevGen,nextGen,rows,cols);
 
+		system("clear");
 		puts("---------------------");
 		printf("Generation: %d\n",gen);
 		printBoard(nextGen,rows,cols);
@@ -127,10 +128,10 @@ int main (int argc, char *argv[])
 		nextGen = tmp;
 
 		gen++;
+
 		sleep(1);
 
 	} while(!sameGeneration(prevGen,nextGen,rows,cols));
-
 
 	free(prevGen);
 	free(nextGen);
